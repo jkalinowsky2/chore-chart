@@ -1,4 +1,4 @@
-const CACHE_NAME = "switch-chore-chart-v1.1";
+const CACHE_NAME = "switch-chore-chart-v1.2";
 
 // If you later add more files, add them here
 const ASSETS = [
