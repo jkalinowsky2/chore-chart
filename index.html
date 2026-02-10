@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nintendo Switch Chore Chart</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1a1a2e">
+
+<!-- iOS PWA behavior -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chores">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+
+<style>
+  :root {
+    --red: #e4000f;
+    --blue: #0071ce;
+    --dark: #1a1a2e;
+    --border: #ddd;
+    --green: #2ecc71;
+    --yellow: #f9c22e;
+    --white: #ffffff;
+    --text: #2d2d2d;
+    --subtext: #777;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: #f0f2f5;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .page { max-width: 900px; margin: 0 auto; }
+
+  /* HEADER */
+  .header {
+    background: var(--dark);
+    border-radius: 16px;
+    padding: 24px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header h1 { font-size: 1.5rem; font-weight: 900; color: var(--white); line-height: 1.2; }
+  .header h1 span { color: var(--yellow); }
+  .header p { font-size: 0.85rem; color: #aaa; margin-top: 2px; }
+
+  .reset-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  .reset-btn {
+    border: none; border-radius: 10px; padding: 9px 16px;
+    font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 0.82rem;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .reset-btn:hover { opacity: 0.85; }
+  .reset-btn.daily  { background: var(--yellow); color: var(--dark); }
+  .reset-btn.weekly { background: var(--blue); color: white; }
+
+  /* GOAL BAR */
+  .goal-bar {
+    background: var(--white); border-radius: 16px;
+    padding: 18px 24px; margin-bottom: 20px;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  .goal-bar label { font-weight: 800; font-size: 0.95rem; white-space: nowrap; }
+  .goal-input-group { display: flex; align-items: center; gap: 8px; }
+  .goal-input-group span { font-size: 1.2rem; font-weight: 800; color: var(--green); }
+  .goal-input-group input {
+    font-family: 'Space Mono', monospace; font-size: 1.3rem; font-weight: 700;
+    color: var(--dark); border: 2px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; width: 110px; outline: none; transition: border-color 0.2s;
+  }
+  .goal-input-group input:focus { border-color: var(--blue); }
+  .last-reset-info { font-size: 0.78rem; color: var(--subtext); margin-left: auto; text-align: right; line-height: 1.7; }
+
+  /* PROGRESS */
+  .progress-section {
+    background: var(--white); border-radius: 16px;
+    padding: 20px 24px; margin-bottom: 20px; border: 2px solid var(--border);
+  }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .progress-header .label { font-weight: 800; font-size: 1rem; }
+  .progress-amounts { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 1rem; }
+  .progress-amounts .earned { color: var(--green); }
+  .progress-amounts .sep   { color: var(--subtext); }
+  .progress-track { background: #eee; border-radius: 999px; height: 28px; overflow: hidden; }
+  .progress-fill {
+    background: linear-gradient(90deg, var(--blue), var(--green));
+    height: 100%; border-radius: 999px;
+    transition: width 0.5s cubic-bezier(.4,0,.2,1);
+    display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;
+  }
+  .progress-fill.complete { background: linear-gradient(90deg, var(--green), #27ae60); }
+  .progress-fill .pct-label { font-family: 'Space Mono', monospace; font-size: 0.75rem; font-weight: 700; color: white; white-space: nowrap; }
+  .congrats-banner {
+    background: var(--green); color: white; border-radius: 10px;
+    padding: 12px 16px; margin-top: 12px; font-weight: 800;
+    font-size: 1rem; text-align: center; display: none;
+  }
+
+  /* KID CARDS */
+  .section-title { font-weight: 900; font-size: 1rem; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--subtext); }
+  .totals-grid { display: grid; gap: 16px; margin-bottom: 20px; }
+  .kid-card { background: var(--white); border-radius: 16px; padding: 18px 20px; border: 2px solid var(--border); text-align: center; }
+  .kid-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin: 0 auto 8px; }
+  .kid-card h3 { font-weight: 900; font-size: 0.95rem; }
+  .kid-card .age-tag { font-size: 0.75rem; color: var(--subtext); font-weight: 600; margin-bottom: 8px; }
+  .kid-total { font-family: 'Space Mono', monospace; font-size: 1.4rem; font-weight: 700; color: var(--green); }
+  .kid-count { font-size: 0.78rem; color: var(--subtext); margin-top: 2px; }
+
+  /* CHORE TABLE */
+  .chore-card { background: var(--white); border-radius: 16px; border: 2px solid var(--border); margin-bottom: 20px; overflow: hidden; }
+  .chore-card-header {
+    background: var(--dark); color: white;
+    font-weight: 800; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 10px 16px; display: flex; align-items: center; gap: 4px;
+  }
+  .chore-section-label {
+    padding: 8px 16px; font-weight: 900; font-size: 0.78rem;
+    letter-spacing: 0.07em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chore-section-label.daily  { background: #fff8e1; color: #9a7000; border-top: 1px solid #f0e0a0; }
+  .chore-section-label.weekly { background: #e8f0fe; color: #1a5db5; border-top: 1px solid #c5d8f8; }
+
+  .chore-row { display: flex; align-items: center; padding: 9px 16px; gap: 4px; border-top: 1px solid #f0f0f0; transition: background 0.15s; }
+  .chore-row:hover { background: #fafafa; }
+
+  .col-name  { flex: 1; min-width: 0; }
+  .col-value { width: 72px; flex-shrink: 0; }
+  .col-kid   { width: 86px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .col-action{ width: 36px; flex-shrink: 0; text-align: center; }
+
+  .chore-name  { font-weight: 700; font-size: 0.88rem; }
+  .chore-value { font-family: 'Space Mono', monospace; font-weight: 700; color: var(--green); font-size: 0.88rem; }
+
+  .check-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 2px solid var(--border); background: white;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; transition: all 0.15s; color: transparent;
+  }
+  .check-btn:hover  { border-color: var(--green); background: #f0fff5; color: var(--green); }
+  .check-btn.checked{ background: var(--green); border-color: var(--green); color: white; }
+  .check-btn.na     { background: none; border: none; color: #ddd; cursor: default; font-size: 0.8rem; pointer-events: none; }
+
+  .remove-btn { background: none; border: none; cursor: pointer; color: #ccc; font-size: 1rem; padding: 0 4px; transition: color 0.15s; }
+  .remove-btn:hover { color: var(--red); }
+
+  .badge { display: inline-block; border-radius: 5px; padding: 1px 6px; font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; vertical-align: middle; margin-left: 6px; }
+  .badge.daily  { background: #fff3b0; color: #9a7000; }
+  .badge.weekly { background: #d0e4ff; color: #1a5db5; }
+
+  /* ADD CHORE */
+  .add-row {
+    padding: 10px 16px; background: #fafafa;
+    border-top: 2px dashed #ddd;
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  .add-row input[type="text"]   { font-family:'Nunito',sans-serif; font-size:0.85rem; padding:7px 10px; border-radius:8px; border:2px solid var(--border); outline:none; flex:1; min-width:140px; }
+  .add-row input[type="number"] { font-family:'Nunito',sans-serif; font-size:0.85rem; padding:7px 10px; border-radius:8px; border:2px solid var(--border); outline:none; width:70px; }
+  .add-row select { font-family:'Nunito',sans-serif; font-size:0.85rem; padding:7px 10px; border-radius:8px; border:2px solid var(--border); outline:none; background:white; }
+  .add-row input:focus, .add-row select:focus { border-color: var(--blue); }
+  .add-btn { background:var(--blue); color:white; border:none; border-radius:8px; padding:8px 14px; font-family:'Nunito',sans-serif; font-weight:800; font-size:0.85rem; cursor:pointer; white-space:nowrap; transition:background 0.15s; }
+  .add-btn:hover { background:#005bab; }
+
+  /* HISTORY */
+  .history-section { background:var(--white); border-radius:16px; border:2px solid var(--border); padding:20px 24px; margin-bottom:20px; }
+  .history-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+  .clear-btn { background:none; border:1px solid var(--border); border-radius:6px; padding:4px 10px; font-size:0.78rem; font-family:'Nunito',sans-serif; font-weight:700; color:var(--subtext); cursor:pointer; transition:all 0.15s; }
+  .clear-btn:hover { border-color:var(--red); color:var(--red); }
+  .history-empty { text-align:center; color:var(--subtext); font-size:0.85rem; padding:20px; }
+  .history-entry { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #f5f5f5; font-size:0.85rem; }
+  .history-entry:last-child { border-bottom:none; }
+  .history-entry .who    { font-weight:700; }
+  .history-entry .amount { font-family:'Space Mono',monospace; font-weight:700; color:var(--green); }
+  .history-entry .time   { color:var(--subtext); font-size:0.75rem; }
+
+  .footer { text-align:center; font-size:0.78rem; color:var(--subtext); padding:10px 0 20px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="header-left">
+      <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+        <rect x="14" y="10" width="28" height="36" rx="4" fill="#e0e0e0"/>
+        <rect x="16" y="12" width="24" height="32" rx="2" fill="#2d2d2d"/>
+        <rect x="0"  y="12" width="16" height="32" rx="6" fill="#e4000f"/>
+        <rect x="40" y="12" width="16" height="32" rx="6" fill="#0071ce"/>
+        <circle cx="8" cy="22" r="4" fill="white" opacity="0.5"/>
+        <rect x="5" y="30" width="6" height="2" rx="1" fill="white" opacity="0.5"/>
+        <rect x="7" y="28" width="2" height="6" rx="1" fill="white" opacity="0.5"/>
+        <circle cx="48" cy="26" r="3" fill="white" opacity="0.6"/>
+        <circle cx="48" cy="34" r="3" fill="white" opacity="0.6"/>
+        <circle cx="44" cy="30" r="3" fill="white" opacity="0.6"/>
+        <circle cx="52" cy="30" r="3" fill="white" opacity="0.6"/>
+      </svg>
+      <div>
+        <h1>Nintendo Switch <span>Chore Chart</span></h1>
+        <p>Complete chores together to earn your Nintendo Switch!</p>
+      </div>
+    </div>
+    <div class="reset-btns">
+      <button class="reset-btn daily"  onclick="resetByFreq('daily')">↺ Reset Daily Chores</button>
+      <button class="reset-btn weekly" onclick="resetByFreq('weekly')">↺ Reset Weekly Chores</button>
+    </div>
+  </div>
+
+  <div class="goal-bar">
+    <label>🎯 Savings Goal:</label>
+    <div class="goal-input-group">
+      <span>$</span>
+      <input type="number" id="goalInput" min="1" step="1" onchange="saveGoal()">
+    </div>
+    <div style="font-size:0.82rem;color:var(--subtext)">Set the price of the Switch you want</div>
+    <div class="last-reset-info" id="resetInfo"></div>
+  </div>
+
+  <div class="progress-section">
+    <div class="progress-header">
+      <div class="label">🏆 Total Progress (All Kids Combined)</div>
+      <div class="progress-amounts">
+        <span class="earned" id="totalEarned">$0.00</span>
+        <span class="sep"> / </span>
+        <span class="sep" id="totalGoal">$350.00</span>
+      </div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:0%">
+        <span class="pct-label" id="pctLabel"></span>
+      </div>
+    </div>
+    <div class="congrats-banner" id="congratsBanner">🎉 You did it! Time to get that Nintendo Switch! 🎉</div>
+  </div>
+
+  <div class="section-title">Each Kid's Contribution</div>
+  <div class="totals-grid" id="kidCards"></div>
+
+  <div class="section-title">Chore List</div>
+  <div class="chore-card">
+    <div class="chore-card-header">
+      <div class="col-name">Chore</div>
+      <div class="col-value">Value</div>
+      <div id="headerKids" style="display:contents"></div>
+      <div class="col-action"></div>
+    </div>
+    <div id="choreList"></div>
+    <div class="add-row">
+      <input type="text"   id="newChoreName"  placeholder="Add a custom chore…" />
+      <input type="number" id="newChoreValue" placeholder="$" min="0.25" step="0.25" />
+      <select id="newChoreFreq">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+      </select>
+      <button class="add-btn" onclick="addChore()">+ Add</button>
+    </div>
+  </div>
+
+  <div class="history-section">
+    <div class="history-header">
+      <div class="section-title" style="margin-bottom:0">Recent Activity</div>
+      <button class="clear-btn" onclick="clearHistory()">Clear History</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <div class="footer">Daily chores reset each day · Weekly chores reset each week · Progress is always saved 💙</div>
+</div>
+
+<script>
+// ============================================================
+//  ✏️  CONFIGURATION — edit this section to customise the chart
+// ============================================================
+const CONFIG = {
+  goal: 350,
+
+  kids: [
+    { name: "Kerri",  age: 9, avatar: "👧🏼", color: "#fde8e8" },
+    { name: "James", age: 8, avatar: "👦🏼", color: "#e8f0fe" },
+    { name: "JJ",   age: 6, avatar: "👦", color: "#e8fdf0" },
+
+  ],
+
+  // freq: "daily" | "weekly"
+  // ages: true/false per kid (matches kids array order above)
+  chores: [
+    { name: "Make your bed",              value: 0.25, freq: "daily",  ages: [true,  true,  true]  },
+    { name: "Feed / water pet",           value: 0.50, freq: "daily",  ages: [true,  true,  true]  },
+    { name: "Tidy up bedroom",            value: 0.50, freq: "daily",  ages: [true,  true,  true]  },
+    { name: "Set / clear the table",      value: 0.50, freq: "daily",  ages: [true,  true,  true]  },
+    { name: "Wipe down counters",         value: 0.75, freq: "daily",  ages: [true,  true,  true]  },
+    { name: "Put away laundry",           value: 0.75, freq: "weekly", ages: [true,  true,  true]  },
+    { name: "Unload dishwasher",          value: 1.00, freq: "weekly", ages: [false, true,  true]  },
+    { name: "Take out trash / recycling", value: 1.00, freq: "weekly", ages: [false, true,  true]  },
+    { name: "Vacuum a room",              value: 1.50, freq: "weekly", ages: [false, true,  true]  },
+    { name: "Sweep / mop floors",         value: 1.50, freq: "weekly", ages: [false, false, true]  },
+    { name: "Help with laundry",          value: 1.00, freq: "weekly", ages: [false, true,  true]  },
+    { name: "Clean bathroom sink/toilet", value: 2.00, freq: "weekly", ages: [false, false, true]  },
+  ]
+};
+// ============================================================
+
+const STORE_KEY = 'switchChoreChart_v4';
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+function weekStr()  {
+  const d = new Date(), jan1 = new Date(d.getFullYear(),0,1);
+  const w = Math.ceil(((d-jan1)/86400000 + jan1.getDay()+1)/7);
+  return d.getFullYear()+'-W'+String(w).padStart(2,'0');
+}
+
+function defaultState() {
+  return {
+    goal:           CONFIG.goal,
+    kidEarnings:    CONFIG.kids.map(()=>0),
+    checked:        {},
+    lastDay:        todayStr(),
+    lastWeek:       weekStr(),
+    customChores:   [],
+    history:        [],
+    lastDailyReset: null,
+    lastWeeklyReset:null,
+  };
+}
+
+let S = (() => {
+  try { const r = localStorage.getItem(STORE_KEY); return r ? JSON.parse(r) : defaultState(); }
+  catch(e) { return defaultState(); }
+})();
+
+// Migrations
+if (!S.customChores)  S.customChores  = [];
+if (!S.kidEarnings)   S.kidEarnings   = CONFIG.kids.map(()=>0);
+if (!S.history)       S.history       = [];
+
+function save() { localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+
+function allChores() { return [...CONFIG.chores, ...S.customChores]; }
+function fmt(n)      { return '$'+n.toFixed(2); }
+
+// ---- AUTO-RESET on date change ----
+function checkAutoReset() {
+  const today = todayStr(), week = weekStr();
+  if (S.lastDay !== today) {
+    unchecks('daily'); S.lastDay = today; S.lastDailyReset = 'Auto-reset at midnight'; save();
+  }
+  if (S.lastWeek !== week) {
+    unchecks('weekly'); S.lastWeek = week; S.lastWeeklyReset = 'Auto-reset this week'; save();
+  }
+}
+
+function unchecks(freq) {
+  allChores().forEach((c,ci) => {
+    if (c.freq === freq) CONFIG.kids.forEach((_,ki) => { S.checked[ci+'_'+ki] = false; });
+  });
+}
+
+// ---- RENDER ----
+function renderKidCards() {
+  const g = document.getElementById('kidCards');
+  g.style.gridTemplateColumns = `repeat(${CONFIG.kids.length},1fr)`;
+  g.innerHTML = CONFIG.kids.map((kid,ki) => `
+    <div class="kid-card">
+      <div class="kid-avatar" style="background:${kid.color}">${kid.avatar}</div>
+      <h3>${kid.name}</h3>
+      <div class="age-tag">Age ${kid.age}</div>
+      <div class="kid-total" id="total-${ki}">${fmt(S.kidEarnings[ki]||0)}</div>
+      <div class="kid-count" id="count-${ki}">0 chores done</div>
+    </div>`).join('');
+}
+
+function renderHeaderKids() {
+  document.getElementById('headerKids').innerHTML = CONFIG.kids.map(k=>
+    `<div class="col-kid" style="text-align:center;font-size:0.78rem;text-transform:uppercase;letter-spacing:0.05em;font-weight:800;color:white">${k.name}</div>`
+  ).join('');
+}
+
+function renderChores() {
+  const chores = allChores();
+  const sorted = chores.map((c,i)=>({...c,origIdx:i})).sort((a,b)=> a.freq===b.freq?0:a.freq==='daily'?-1:1);
+  let html='', lastFreq=null;
+
+  sorted.forEach(chore => {
+    const ci = chore.origIdx;
+    if (chore.freq !== lastFreq) {
+      const label = chore.freq==='daily' ? '☀️  Daily Chores — reset each day' : '📅  Weekly Chores — reset each week';
+      html += `<div class="chore-section-label ${chore.freq}">${label}</div>`;
+      lastFreq = chore.freq;
+    }
+    const kidCells = CONFIG.kids.map((kid,ki) => {
+      const ok = chore.ages ? (chore.ages[ki]!==undefined ? chore.ages[ki] : true) : true;
+      if (!ok) return `<div class="col-kid"><span class="check-btn na">—</span></div>`;
+      const checked = !!S.checked[ci+'_'+ki];
+      return `<div class="col-kid"><button class="check-btn${checked?' checked':''}" onclick="toggleChore(${ci},${ki})" title="${kid.name}">✓</button></div>`;
+    }).join('');
+    const isCustom = ci >= CONFIG.chores.length;
+    html += `
+      <div class="chore-row">
+        <div class="col-name"><span class="chore-name">${chore.name}</span><span class="badge ${chore.freq}">${chore.freq}</span></div>
+        <div class="col-value chore-value">${fmt(chore.value)}</div>
+        ${kidCells}
+        <div class="col-action">${isCustom?`<button class="remove-btn" onclick="removeChore(${ci})" title="Remove">✕</button>`:''}</div>
+      </div>`;
+  });
+  document.getElementById('choreList').innerHTML = html;
+}
+
+function renderProgress() {
+  const goal = S.goal || CONFIG.goal;
+  const total = (S.kidEarnings||[]).reduce((a,b)=>a+b,0);
+  const pct = Math.min(100, (total/goal)*100);
+  document.getElementById('totalEarned').textContent = fmt(total);
+  document.getElementById('totalGoal').textContent   = fmt(goal);
+  const fill = document.getElementById('progressFill');
+  fill.style.width  = pct+'%';
+  fill.className    = 'progress-fill'+(pct>=100?' complete':'');
+  document.getElementById('pctLabel').textContent = pct>=6 ? Math.round(pct)+'%' : '';
+  document.getElementById('congratsBanner').style.display = pct>=100 ? 'block' : 'none';
+}
+
+function renderKidTotals() {
+  const chores = allChores();
+  const counts = CONFIG.kids.map(()=>0);
+  chores.forEach((_,ci) => CONFIG.kids.forEach((__,ki) => { if (S.checked[ci+'_'+ki]) counts[ki]++; }));
+  CONFIG.kids.forEach((_,ki) => {
+    const t = document.getElementById('total-'+ki);
+    const c = document.getElementById('count-'+ki);
+    if(t) t.textContent = fmt(S.kidEarnings[ki]||0);
+    if(c) c.textContent = counts[ki]+' chore'+(counts[ki]!==1?'s':'')+' done this session';
+  });
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  if (!S.history||S.history.length===0) { el.innerHTML='<div class="history-empty">No chores completed yet — get to work! 😄</div>'; return; }
+  el.innerHTML = S.history.slice(0,20).map(h=>`
+    <div class="history-entry">
+      <div><span class="who">${h.who}</span><span style="color:var(--subtext)"> completed </span><span style="font-weight:600">${h.chore}</span><span class="badge ${h.freq}">${h.freq}</span></div>
+      <div style="text-align:right"><div class="amount">+${fmt(h.amount)}</div><div class="time">${h.time}</div></div>
+    </div>`).join('');
+}
+
+function renderResetInfo() {
+  const lines=[];
+  if(S.lastDailyReset)  lines.push('Daily last reset: '+S.lastDailyReset);
+  if(S.lastWeeklyReset) lines.push('Weekly last reset: '+S.lastWeeklyReset);
+  if(!lines.length) lines.push('No manual resets yet');
+  document.getElementById('resetInfo').innerHTML = lines.join('<br>');
+}
+
+function renderAll() { renderChores(); renderProgress(); renderKidTotals(); renderHistory(); renderResetInfo(); }
+
+// ---- ACTIONS ----
+function toggleChore(ci, ki) {
+  const chore = allChores()[ci];
+  const key   = ci+'_'+ki;
+  const wasChecked = !!S.checked[key];
+  S.checked[key] = !wasChecked;
+  if (!wasChecked) {
+    S.kidEarnings[ki] = (S.kidEarnings[ki]||0) + chore.value;
+    S.history.unshift({ who:CONFIG.kids[ki].name, chore:chore.name, freq:chore.freq, amount:chore.value, time:new Date().toLocaleString() });
+    if(S.history.length>100) S.history.pop();
+  } else {
+    S.kidEarnings[ki] = Math.max(0,(S.kidEarnings[ki]||0)-chore.value);
+  }
+  save(); renderAll();
+}
+
+function addChore() {
+  const name  = document.getElementById('newChoreName').value.trim();
+  const value = parseFloat(document.getElementById('newChoreValue').value);
+  const freq  = document.getElementById('newChoreFreq').value;
+  if (!name||isNaN(value)||value<=0) { alert('Please enter a chore name and a value greater than $0.'); return; }
+  S.customChores.push({ name, value, freq, ages: CONFIG.kids.map(()=>true) });
+  document.getElementById('newChoreName').value  = '';
+  document.getElementById('newChoreValue').value = '';
+  save(); renderAll();
+}
+
+function removeChore(idx) {
+  const customIdx = idx - CONFIG.chores.length;
+  if (customIdx<0||customIdx>=S.customChores.length) return;
+  if (confirm('Remove "'+S.customChores[customIdx].name+'"?')) {
+    CONFIG.kids.forEach((_,ki) => delete S.checked[idx+'_'+ki]);
+    S.customChores.splice(customIdx,1);
+    save(); renderAll();
+  }
+}
+
+function saveGoal() {
+  S.goal = parseFloat(document.getElementById('goalInput').value) || CONFIG.goal;
+  save(); renderProgress();
+}
+
+function resetByFreq(freq) {
+  const label = freq==='daily' ? 'daily' : 'weekly';
+  if (!confirm(`Reset all ${label} chores?\n\n(Earned money is kept — only the checkboxes are cleared)`)) return;
+  unchecks(freq);
+  const ts = new Date().toLocaleString();
+  if (freq==='daily')  { S.lastDailyReset  = ts; S.lastDay  = todayStr(); }
+  else                 { S.lastWeeklyReset = ts; S.lastWeek = weekStr();  }
+  save(); renderAll();
+}
+
+function clearHistory() {
+  if (confirm('Clear the activity log? (Earnings and progress are not affected)')) { S.history=[]; save(); renderHistory(); }
+}
+
+// ---- INIT ----
+checkAutoReset();
+document.getElementById('goalInput').value = S.goal || CONFIG.goal;
+renderKidCards();
+renderHeaderKids();
+renderAll();
+</script>
+
+<script>
+  // Register service worker (enables offline + “installed app” behavior)
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(console.error);
+    });
+  }
+</script>
+
+</body>
+</html>
